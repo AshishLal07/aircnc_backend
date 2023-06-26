@@ -6,7 +6,7 @@ const router = require('./router/index.js');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 
-const Port = 3100;
+const Port = process.env.PORT;
 const app = express();
 
 
@@ -23,7 +23,7 @@ app.use('/', router);
 
 // ASINUZtYQEL1qUMh
 
-app.listen( Port, function(){
+app.listen( Port || 3100, function(){
     console.log("Server is running on the Port: ", Port)
 })
 
