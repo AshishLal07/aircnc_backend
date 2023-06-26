@@ -238,6 +238,7 @@ module.exports.houseDetails = async(req, res) => {
 
 module.exports.reservePlace = async(req,res) => {
     const {user,place,checkIn, checkOut, guest, name, mobNo, price} = req.body;
+    // console.log(req.body);
    
     const newBooking =  await Booking.create({user,
         place,checkIn, checkOut, guest, name, mobNo, price
