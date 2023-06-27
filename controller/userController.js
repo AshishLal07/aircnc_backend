@@ -24,8 +24,8 @@ module.exports.userRegister = async (req,res) => {
    try {
     
     const {name,email,password} = req.body
-    const saltRound = 10;
-    const hashPassword = bcrypt.hashSync(password,saltRound);
+    const saltRound = await bcryct.genSalt();;
+    const hashPassword = await bcrypt.hashSync(password,saltRound);
     
     const newUser = await User.create({name,email,password:hashPassword});
 
@@ -37,37 +37,38 @@ module.exports.userRegister = async (req,res) => {
 };
 
 module.exports.userLogin = async (req,res) => {
-    
-    const {email,password} =req.body;
-    if(email === "" || password ==="" ){
-        return res.statue(400).json('Enter the valid details')
-    }
-    const validUser = await User.findOne({email});
-    if(validUser){
-        const passOk = bcrypt.compare(password,validUser.password);
-        if(!passOk){
-            return res.status(404).json('Enter a valid email/password');
-        }
+    try{
+            const {email,password} =req.body;
+            if(email === "" || password ==="" ){
+                return res.statue(400).json('Enter the valid details')
+            }
+            const validUser = await User.findOne({email});
+            if(validUser){
+                const passOk = bcrypt.compare(password,validUser.password);
+                if(!passOk){
+                    return res.status(404).json('Enter a valid email/password');
+                }
 
-    }else{
-        return res.status(404).json('Enter a valid email/password');
-    }
+            }else{
+                return res.status(404).json('Enter a valid email/password');
+            }
 
-    jwt.sign({email:validUser.email,id:validUser._id}, process.env.JWT_SECRET,{}, (err,token)=> {
-        if(err) throw err;
-        res.cookie("token", token).json(validUser);
-    });
+            const token = await jwt.sign({email:validUser.email,id:validUser._id}, process.env.JWT_SECRET);
+            res.json({token,validUser});
+    } catch(err){
+            return res.status(400).json({ error: error.message });
+
+}
 
 }
 
 module.exports.userProfile = async (req,res) => {
-    
-        const{ token} = req.cookies;
+        const data = req.user;
+        // console.log(data);
         
-        if(token){
+        if(data.id){
             
-            jwt.verify(token, process.env.JWT_SECRET,{},async (err,data)=>{
-                if(err)throw err
+            
                 const userData = await User.findById(data.id);
                 
                 if(userData){
@@ -76,10 +77,9 @@ module.exports.userProfile = async (req,res) => {
                 }else{
                     res.json('Error while login');
                 }  
-            });
             // res.json("error in while logging")
         }else{
-            res.json({})
+            res.json("error")
         }
        
 }
@@ -118,7 +118,7 @@ module.exports.userUploads = async(req,res) => {
     res.json(uploadedFiles);
 }
 module.exports.userNewPlace = async (req,res) => {
-    const {token} = req.cookies;
+    const user = req.user;
     const {
         title,
         address,
@@ -132,10 +132,10 @@ module.exports.userNewPlace = async (req,res) => {
         price
     } = req.body;
     
-    jwt.verify(token,process.env.JWT_SECRET, {}, async(err,userData)=>{
-        if(err) throw err;
+   
+        
        const placeDoc = await Places.create({
-            owner:userData.id,
+            owner:user.id,
 			title,
 			address,
 			photos:addedPhoto,
@@ -147,23 +147,20 @@ module.exports.userNewPlace = async (req,res) => {
 			maxGuest,price
 		});
         res.json(placeDoc)
-    });
+    
     
 }
 
 module.exports.userPlaces = async (req,res) => {
    
-    const {token} = req.cookies;
-    console.log(req.cookies,token) 
-    jwt.verify(token,process.env.JWT_SECRET, {}, async (err,userData)=>{
-        console.log(userData)
-       const {id} = userData;
+    const {id} = req.user;
+    
        const ObjectId = new mongoose.Types.ObjectId(id);
        const list = await Places.find({owner:ObjectId});
     
        res.json(list);
 
-    })
+    
     
 
 }
@@ -183,7 +180,7 @@ module.exports.userPlace = async (req,res) => {
 }
 
 module.exports.updatePlace = async( req,res) => {
-    const {token} =req.cookies;
+    const user =req.user;
     const {id,  title,
         address,
         addedPhoto,
@@ -193,10 +190,10 @@ module.exports.updatePlace = async( req,res) => {
         checkIn,
         checkOut,
         maxGuest,price} = req.body;
-    jwt.verify(token,process.env.JWT_SECRET, {}, async(err,userData)=>{
+   
         const place = await Places.findById(id);
         
-        if(place.owner.toString() === userData.id){
+        if(place.owner.toString() === user.id){
             
              place.set({
                 title,
@@ -213,10 +210,12 @@ module.exports.updatePlace = async( req,res) => {
             await place.save();
             
             res.json('ok');
+        }else{
+            res.json('error')
         }
        
 
-})
+
 }
 
 module.exports.allPlaces = async(req,res)=>{
@@ -253,11 +252,10 @@ module.exports.reservePlace = async(req,res) => {
 
 module.exports.userBooking = async(req,res) => {
     
-    const {token} = req.cookies;
-    console.log(token);
-    const validUserId = await getUserDataFromJwt(token)
-    const bookingData = await Booking.find({user:validUserId.id}).populate("place");
-    console.log(bookingData);
+    const {id} = req.user;
+    // console.log(id);
+    const bookingData = await Booking.find({user:id}).populate("place");
+    // console.log(bookingData);
     res.json(bookingData);
     
 
