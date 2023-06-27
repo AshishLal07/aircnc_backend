@@ -152,11 +152,11 @@ module.exports.userNewPlace = async (req,res) => {
 }
 
 module.exports.userPlaces = async (req,res) => {
-    console.log(req.cookies)
+   
     const {token} = req.cookies;
-    
+    console.log(req.cookies,token) 
     jwt.verify(token,process.env.JWT_SECRET, {}, async (err,userData)=>{
-
+        console.log(userData)
        const {id} = userData;
        const ObjectId = new mongoose.Types.ObjectId(id);
        const list = await Places.find({owner:ObjectId});
