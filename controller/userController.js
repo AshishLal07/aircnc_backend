@@ -152,6 +152,7 @@ module.exports.userNewPlace = async (req,res) => {
 }
 
 module.exports.userPlaces = async (req,res) => {
+    console.log(req)
     const {token} = req.cookies;
     
     jwt.verify(token,process.env.JWT_SECRET, {}, async (err,userData)=>{
@@ -250,10 +251,12 @@ module.exports.reservePlace = async(req,res) => {
 }
 
 module.exports.userBooking = async(req,res) => {
+    
     const {token} = req.cookies;
+    console.log(req.body,token);
     const validUserId = await getUserDataFromJwt(token)
     const bookingData = await Booking.find({user:validUserId.id}).populate("place");
-    
+    console.log(bookingData);
     res.json(bookingData);
     
 

@@ -9,7 +9,7 @@ router.get('/placesList/',userController.userPlaces)
 router.get('/place/:id',userController.userPlace)
 router.get('/allPlaces',userController.allPlaces);
 router.get('/houseDetail/:id',userController.houseDetails);
-router.get('/myBooking',userController.userBooking);
+router.get('/bookings',userController.userBooking);
 
 router.post('/register' ,userController.userRegister);
 router.post('/login', userController.userLogin);
